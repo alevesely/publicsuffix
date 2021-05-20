@@ -239,14 +239,14 @@ static size_t reverse_labels(char *domain, size_t len, char ***rtc_labels)
 */
 
 // trie nodes, only for non-leaf nodes
-struct trie_node // 4 bytes
+typedef struct trie_node // 4 bytes
 {
 	uint16_t first_child;
 #define MAX_NUM_TRIE_NODES 0xffffU
 
 	uint16_t num_children;
 #define MAX_NUM_CHILDREN 0xffffU
-};
+} trie_node;
 
 // string table entry, for each name
 typedef struct string_node
@@ -258,7 +258,7 @@ typedef struct string_node
 * Data structures used to perform the search. Should be
 * populated once at startup by a call to publicsuffix_init.
 */
-typedef struct publicsuffix_trie
+struct publicsuffix_trie
 {
 	trie_node *node_table; // allocated
 	string_node *str;
@@ -271,7 +271,7 @@ typedef struct publicsuffix_trie
 	time_t old_time;
 	off_t old_size;
 	char old_fname[];
-} publicsuffix_trie;
+};
 
 typedef struct bsearch_key
 {
