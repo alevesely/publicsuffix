@@ -382,23 +382,6 @@ find_node(publicsuffix_trie const *pst, char *component, string_node *parent)
 		bsearch(&key, base, size, sizeof(string_node), bsearch_cmp);
 	assert(size > 0 || current == NULL);
 
-#if 0
-	if (size > 0 && current == NULL)
-	/*
-	* We didn't find an exact match, so see if there's a wildcard
-	* match.  From https://publicsuffix.org/list/: "The wildcard
-	* character * (asterisk) matches any valid sequence of characters
-	* in a hostname part. (Note: the list uses Unicode, not Punycode
-	* forms, and is encoded using UTF-8.) Wildcards may only be used to
-	* wildcard an entire level. That is, they must be surrounded by
-	* dots (or implicit dots, at the beginning of a line)."
-	*/
-	{
-		key.component = "*";
-		current =
-			bsearch(&key, base, size, sizeof(string_node), bsearch_cmp);
-	}
-#endif
 	return current;
 }
 
@@ -495,13 +478,18 @@ char *org_domain(publicsuffix_trie const *pst, char const *c_domain)
 
 			if (node_is_final(pst, current)) // match
 			{
+				/*
+				* By point 7, the organizational domain is obtained
+				* by adding 1 to best_match.  However, need to add 1
+				* now to distinguish a best match at i=0.
+				*/
 				if (node_is_exception(pst, current))
 				{
-					best_match = i + 1; // by point 5 and 7
+					best_match = i + 1; // by point 5
 					break; // by point 3
 				}
 
-				// by point 4, length is i+1, by point 7 add 1
+				// by point 4, length is i+1
 				if (i + 1 >= best_match)
 					best_match = i + 2;
 			}
