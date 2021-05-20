@@ -497,18 +497,17 @@ char *org_domain(publicsuffix_trie const *pst, char const *c_domain)
 			{
 				if (node_is_exception(pst, current))
 				{
-					best_match = i; // by point 5
+					best_match = i + 1; // by point 5 and 7
 					break; // by point 3
 				}
 
-				// by point 4, length is i+1
-				if (i >= best_match)
-					best_match = i + 1;
+				// by point 4, length is i+1, by point 7 add 1
+				if (i + 1 >= best_match)
+					best_match = i + 2;
 			}
 		}
 
-		++best_match; // by point 7
-		if (best_match > nlabels || best_match == 1)
+		if (best_match > nlabels || best_match == 0)
 		{
 			free(domain);
 			free(labels);
@@ -1010,6 +1009,8 @@ publicsuffix_trie *publicsuffix_init(char const *fname, publicsuffix_trie *old)
 */
 {
 	assert(fname);
+
+	// set do_report
 
 #if 0
 	if (_LIBUNISTRING_VERSION != _libunistring_version) // (major<<8) + minor
