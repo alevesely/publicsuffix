@@ -104,18 +104,6 @@ char *org_domain(publicsuffix_trie const *pst, char const *domain);
 void publicsuffix_done(publicsuffix_trie *pst);
 publicsuffix_trie *publicsuffix_init(char const *fname, publicsuffix_trie *old);
 
-
-#endif 
-
-#if !defined PUBLICSUFFIX_H_INCLUDED
-
-struct publicsuffix_trie;
-typedef struct publicsuffix_trie publicsuffix_trie;
-
-char *org_domain(publicsuffix_trie const *pst, char const *domain);
-void publicsuffix_done(publicsuffix_trie *pst);
-publicsuffix_trie *publicsuffix_init(char const *fname, publicsuffix_trie *old);
-
 // define a reporting function for this library item
 #if defined __GNUC__
 __attribute__ ((format(printf, 2, 3)))
@@ -251,14 +239,14 @@ static size_t reverse_labels(char *domain, size_t len, char ***rtc_labels)
 */
 
 // trie nodes, only for non-leaf nodes
-typedef struct trie_node // 4 bytes
+struct trie_node // 4 bytes
 {
 	uint16_t first_child;
 #define MAX_NUM_TRIE_NODES 0xffffU
 
 	uint16_t num_children;
 #define MAX_NUM_CHILDREN 0xffffU
-} trie_node;
+};
 
 // string table entry, for each name
 typedef struct string_node
