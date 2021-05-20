@@ -13701,8 +13701,6 @@ notsh
 bcd.efg.hij.klm.nop.qrs.tuv.wxy.z
 bcd.efg.*.klm.*.qrs.tuv.*.z
 bcd.*.*.*.nop.*.*.*.z
-
-
-
+!exception
 
 // ===END TEST DOMAINS===
