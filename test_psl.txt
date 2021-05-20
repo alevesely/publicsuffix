@@ -130,3 +130,6 @@ checkPublicSuffix("a.bcd.gfe.jih.mlk.nop.srq.vut.yxw.z", "a.bcd.gfe.jih.mlk.nop.
 checkPublicSuffix("a.bcd.gfe.jih.mlk.nop.srq.vut.wxy.z", "a.bcd.gfe.jih.mlk.nop.srq.vut.wxy.z");
 checkPublicSuffix("a.bcd.gfe.jih.mlk.nop.srq.tuv.wxy.z", "a.bcd.gfe.jih.mlk.nop.srq.tuv.wxy.z");
 checkPublicSuffix("a.bcd.gfe.jih.mlk.nop.qrs.tuv.wxy.z", "a.bcd.gfe.jih.mlk.nop.qrs.tuv.wxy.z");
+
+// match TLD exception
+checkPublicSuffix("x.exception", "exception");
