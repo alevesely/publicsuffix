@@ -6,7 +6,12 @@
 // gcc -W -Wall -std=gnu99 -g -o test test.c -lidn2 -lunistring
 //
 // run:
-// ./test fulltest.dat -t
+// ./test fulltest.dat -t [-v] [-c]
+// or
+// ./test fulltest.dat fully.qualified.domain.name [-v] [-c]
+//where
+// fulltest.dat can be any PSL,
+// -v for verbose, -c for compliant with the wildcard rule
 //
 // This file contains scrap code to make a library that uses the PSL.
 // That is a header, an implementation, and client code chapters.
@@ -52,6 +57,8 @@ along with this code.  If not, see <http://www.gnu.org/licenses/>.
 
 // ----- imported utility function -----
 #include <stdarg.h> 
+
+static int comply_with_wildcard_rule = 0, verbose = 0; // main options
 
 void fl_report(int severity, char const* fmt, ...)
 {
@@ -120,7 +127,7 @@ static void (*do_report)(int severity, char const* fmt, ...) = &fl_report;
 
 /*
 * This code reuses Bryan McQuade's design of domain-registry-provider, see
-* https://code.google.com/p/domain-registry-provider/wiki/DesignDoc
+* https://web.archive.org/web/20150419082104/https://code.google.com/p/domain-registry-provider/wiki/DesignDoc
 *
 * This algorithm is documented below, after generic function(s), besides
 * structures definitions.
@@ -427,7 +434,8 @@ char *org_domain(publicsuffix_trie const *pst, char const *c_domain)
 		*
 		* 1 Match domain against all rules and take note of the matching
 		*   ones.
-		* 2 If no rules match, the prevailing rule is "*".
+		* 2 If no rules match, the prevailing rule is "*". Only obeyed
+		*   if comply_with_wildcard_rule is set. 
 		* 3 If more than one rule matches, the prevailing rule is the
 		*   one which is an exception rule.
 		* 4 If there is no matching exception rule, the prevailing rule
@@ -460,13 +468,14 @@ char *org_domain(publicsuffix_trie const *pst, char const *c_domain)
 			}
 
 #if defined DEBUG_PUBLICSUFFIX
-			printf("%2zu %s: %s -> %s%s%s%s\n",
-				i, labels[i],
-				parent? &pst->string_table[parent->n]: "TOP",
-				node_is_exception(pst, current)? "!": "",
-				node_has_star_child(pst, current)? "*": "",
-				node_is_final(pst, current)? "/": "",
-				&pst->string_table[current->n]);
+			if (verbose)
+				printf("%2zu %s: %s -> %s%s%s%s\n",
+					i, labels[i],
+					parent? &pst->string_table[parent->n]: "TOP",
+					node_is_exception(pst, current)? "!": "",
+					node_has_star_child(pst, current)? "*": "",
+					node_is_final(pst, current)? "/": "",
+					&pst->string_table[current->n]);
 #endif // DEBUG_PUBLICSUFFIX
 
 			if (node_has_star_child(pst, current))
@@ -495,13 +504,15 @@ char *org_domain(publicsuffix_trie const *pst, char const *c_domain)
 			}
 		}
 
+		if (comply_with_wildcard_rule && best_match == 0)
+			best_match = 1;
+
 		if (best_match > nlabels || best_match == 0)
 		{
 			free(domain);
 			free(labels);
 			return NULL;
 		}
-
 
 		len = 0;
 		for (size_t i = 0; i < best_match; ++i)
@@ -1226,10 +1237,11 @@ norm_org_domain(publicsuffix_trie const *pst, char const *c_domain)
 		return NULL;
 
 	int eq = strcmp(out, norm) == 0;
-	printf("\nLooking up %s%s%s%s\n", c_domain,
-		eq? "": "  (",
-		eq? "": out,
-		eq? "": ")");
+	if (verbose)
+		printf("\nLooking up %s%s%s%s\n", c_domain,
+			eq? "": "  (",
+			eq? "": out,
+			eq? "": ")");
 	char *rtc = org_domain(pst, out);
 	free(out);
 
@@ -1241,6 +1253,13 @@ norm_org_domain(publicsuffix_trie const *pst, char const *c_domain)
 
 	free(rtc);
 	return out;
+}
+
+static void usage(char const *arg)
+{
+	fprintf(stderr, "usage: %s [opt] suffix-list domain...\n"
+		"\twhere opt can be -v for verbose, -c for compliant, -t for test\n",
+		arg);
 }
 
 static int check(publicsuffix_trie *pst, char const *in, char const *out)
@@ -1262,11 +1281,11 @@ void public_test(publicsuffix_trie *pst)
 	printf("%zu/%zu errors\n", errs, check_calls);
 }
 
-
-
 int main(int argc, char *argv[])
 {
 	int rtc = 1;
+	int run_tests = 0;
+	publicsuffix_trie *pst = NULL;
 
 	if (_LIBUNISTRING_VERSION != _libunistring_version) // (major<<8) + minor
 		fprintf(stderr, "unistring version mismatch, expecting %d, have %d\n",
@@ -1277,24 +1296,51 @@ int main(int argc, char *argv[])
 	}
 	else if (argc > 1)
 	{
-		publicsuffix_trie *pst = publicsuffix_init(argv[1], NULL);
-		if (pst)
+		for (int i = 1; i < argc; ++i)
 		{
-			for (int i = 2; i < argc; ++i)
+			char *a = argv[i];
+			if (a[0] == '-') // option
 			{
-				if (strcmp(argv[i], "-t") == 0)
+				if (a[1] == '-' || a[1] == 0)
 				{
-					public_test(pst);
-					continue;
+					usage(argv[0]);
+					break;
 				}
+
+				int j;
+				for (j = 1; a[j] != 0; ++j)
+					switch (a[j])
+					{
+						case 'c': comply_with_wildcard_rule = 1; break;
+						case 't': run_tests = 1; break;
+						case 'v': verbose += 1; break;
+						default:
+							fprintf(stderr, "Invalid opt '%c' in %s\n", a[j], a);
+							break;
+					}
+			}
+			else if (pst == NULL)
+			{
+				pst = publicsuffix_init(a, NULL);
+				if (pst == NULL)
+					break;
+			}
+			else
+			{
 				char *od = norm_org_domain(pst, argv[i]);
 				printf("%s -> %s\n", argv[i], od? od: "null");
 				free(od);
 			}
-			publicsuffix_done(pst);
 		}
 	}
-	else fprintf(stderr, "usage: %s rule-file domain...\n", argv[0]);
+	else // argc <= 1
+		usage(argv[0]);
+
+	if (run_tests && pst)
+		public_test(pst);
+
+	if (pst)
+		publicsuffix_done(pst);
 
 	return rtc;
 }
