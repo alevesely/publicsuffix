@@ -21,10 +21,10 @@ checkPublicSuffix("b.example.example", "example.example");
 checkPublicSuffix("a.b.example.example", "example.example");
 
 // Listed, but non-Internet, TLD.
-checkPublicSuffix("local", NULL);
-checkPublicSuffix("example.local", NULL);
-checkPublicSuffix("b.example.local", NULL);
-checkPublicSuffix("a.b.example.local", NULL);
+//checkPublicSuffix("local", NULL);
+//checkPublicSuffix("example.local", NULL);
+//checkPublicSuffix("b.example.local", NULL);
+//checkPublicSuffix("a.b.example.local", NULL);
 
 // TLD with only 1 rule.
 checkPublicSuffix("biz", NULL);
