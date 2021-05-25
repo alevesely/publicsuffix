@@ -417,10 +417,10 @@ char *org_domain(publicsuffix_trie const *pst, char const *c_domain)
 			string_node *parent;
 			size_t i;
 		} stars[nlabels];
-		size_t next_star = 0, best_match = 0;
+		size_t next_star = 0, best_match = 0, i;
 		string_node *current = NULL, *parent;
 
-		for (size_t i = 0; i < nlabels; ++i)
+		for (i = 0; i < nlabels; ++i)
 		/*
 		* Loop reversed labels until either not found or exception.
 		*
@@ -504,7 +504,7 @@ char *org_domain(publicsuffix_trie const *pst, char const *c_domain)
 			}
 		}
 
-		if (comply_with_wildcard_rule && best_match == 0)
+		if (comply_with_wildcard_rule && best_match == 0 && i == 0)
 			best_match = 1;
 
 		if (best_match > nlabels || best_match == 0)
